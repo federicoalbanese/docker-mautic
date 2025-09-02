@@ -1,0 +1,8 @@
+FROM mautic/mautic:6.0.4-fpm
+
+ARG LOCAL_UID=1000
+ARG LOCAL_GID=1000
+
+# Align www-data user and group with host for seamless volume permissions
+RUN groupmod -g ${LOCAL_GID} www-data \
+    && usermod -u ${LOCAL_UID} www-data
