@@ -24,6 +24,24 @@ This directory provides a FPM + Nginx setup to run [Mautic](https://www.mautic.o
 3. Access Mautic in your browser at:
    [http://localhost:8080](http://localhost:8080)
 
+## Local development
+
+For a development setup that mounts the Mautic source code directly and
+matches container permissions with your host user, use the
+`docker-compose.local.yml` file.
+
+1. Download Mautic 6.0.4 into a `mautic` directory placed next to this
+   compose file.
+2. Set `LOCAL_UID` and `LOCAL_GID` in `.env` to your host user's UID and GID.
+3. Launch the stack with:
+
+   ```bash
+   docker compose -f docker-compose.local.yml up -d
+   ```
+
+This configuration is intended for local development only. Create separate
+compose files for staging and production environments.
+
 ## Configuration
 
 You can configure environment variables in the [.env](.env) file. **Make sure to update the following before deploying to production:**
