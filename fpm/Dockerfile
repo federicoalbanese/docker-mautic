@@ -57,13 +57,22 @@ RUN echo "memory_limit = -1" > /usr/local/etc/php/php.ini
 
 # Define Mautic version by package tag
 ARG MAUTIC_VERSION=6.x-dev
+# Toggle downloading Mautic source during image build
+ARG MAUTIC_DOWNLOAD_SOURCE=true
 
-RUN cd /opt && \
-    COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_PROCESS_TIMEOUT=10000 composer create-project mautic/recommended-project:${MAUTIC_VERSION} mautic --no-interaction && \
-    rm -rf /opt/mautic/var/cache/js && \
-    find /opt/mautic/node_modules -mindepth 1 -maxdepth 1 -not \( -name 'jquery' -or -name 'vimeo-froogaloop2' \) | xargs rm -rf
+RUN if [ "$MAUTIC_DOWNLOAD_SOURCE" = "true" ]; then \
+        cd /opt && \
+        COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_PROCESS_TIMEOUT=10000 composer create-project mautic/recommended-project:${MAUTIC_VERSION} mautic --no-interaction && \
+        rm -rf /opt/mautic/var/cache/js && \
+        find /opt/mautic/node_modules -mindepth 1 -maxdepth 1 -not \( -name 'jquery' -or -name 'vimeo-froogaloop2' \) | xargs rm -rf; \
+    else \
+        mkdir -p /opt/mautic; \
+    fi
 
 FROM php:8.3-fpm
+
+ARG LOCAL_UID=1000
+ARG LOCAL_GID=1000
 
 # Setting PHP properties
 ENV PHP_INI_VALUE_DATE_TIMEZONE='UTC' \
@@ -80,6 +89,10 @@ ENV DOCKER_MAUTIC_WORKERS_CONSUME_EMAIL=2 \
 ENV DOCKER_MAUTIC_ROLE=mautic_web \
     DOCKER_MAUTIC_RUN_MIGRATIONS=false \
     DOCKER_MAUTIC_LOAD_TEST_DATA=false
+
+# Align www-data user and group with host for seamless volume permissions
+RUN groupmod -o -g ${LOCAL_GID} www-data \
+    && usermod -o -u ${LOCAL_UID} www-data
 
 # Copy php settings and extensions from builder
 COPY --from=builder /usr/local/lib/php/extensions /usr/local/lib/php/extensions
